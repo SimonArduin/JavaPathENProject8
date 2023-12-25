@@ -17,3 +17,7 @@ jobs:
         run: |
           cd TourGuide
           mvn --batch-mode --update-snapshots verify
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+            path: staging
