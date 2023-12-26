@@ -27,3 +27,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: TourGuide/target/*.jar
+          name: TourGuide-artifact-${{ github.sha }}
