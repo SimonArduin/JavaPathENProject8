@@ -22,7 +22,7 @@ jobs:
       - name: Run the Maven verify phase
         run : |
           cd TourGuide
-          mvn --batch-mode --update-snapshots verify
+          mvn --batch-mode --update-snapshots clean verify
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
