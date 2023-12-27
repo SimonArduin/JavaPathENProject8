@@ -1,7 +1,13 @@
 package com.openclassrooms.tourguide;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.openclassrooms.tourguide.service.RewardsService;
+import gpsUtil.location.Location;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,6 +20,7 @@ import com.openclassrooms.tourguide.service.TourGuideService;
 import com.openclassrooms.tourguide.user.User;
 import com.openclassrooms.tourguide.user.UserReward;
 
+import rewardCentral.RewardCentral;
 import tripPricer.Provider;
 
 @RestController
@@ -21,6 +28,18 @@ public class TourGuideController {
 
 	@Autowired
 	TourGuideService tourGuideService;
+
+    @Autowired
+    RewardsService rewardsService;
+
+    @Autowired
+    RewardCentral rewardCentral;
+
+    public TourGuideController(TourGuideService tourGuideService, RewardsService rewardsService, RewardCentral rewardCentral) {
+        this.tourGuideService = tourGuideService;
+        this.rewardsService = rewardsService;
+        this.rewardCentral = rewardCentral;
+    }
 	
     @RequestMapping("/")
     public String index() {
@@ -42,9 +61,24 @@ public class TourGuideController {
         // The reward points for visiting each Attraction.
         //    Note: Attraction reward points can be gathered from RewardsCentral
     @RequestMapping("/getNearbyAttractions") 
-    public List<Attraction> getNearbyAttractions(@RequestParam String userName) {
-    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(getUser(userName));
-    	return tourGuideService.getNearByAttractions(visitedLocation);
+    public JSONArray getNearbyAttractions(@RequestParam String userName) {
+        User user = getUser(userName);
+    	VisitedLocation visitedLocation = tourGuideService.getUserLocation(user);
+    	List<Attraction> nearByAttractions = tourGuideService.getNearByAttractions(visitedLocation);
+        JSONArray result = new JSONArray();
+        for(Attraction attraction : nearByAttractions) {
+            Map<String, String> map = new HashMap<>();
+            map.put("name", attraction.attractionName);
+            map.put("lat", String.valueOf(attraction.latitude));
+            map.put("long", String.valueOf(attraction.longitude));
+            map.put("userLat", String.valueOf(visitedLocation.location.latitude));
+            map.put("userLong", String.valueOf(visitedLocation.location.longitude));
+            map.put("distance", String.valueOf(rewardsService.getDistance(visitedLocation.location, new Location(attraction.latitude, attraction.longitude))));
+            map.put("rewardPoints", String.valueOf(rewardCentral.getAttractionRewardPoints(attraction.attractionId, user.getUserId())));
+            JSONObject attractionJson = new JSONObject(map);
+            result.put(attractionJson);
+        }
+        return result;
     }
     
     @RequestMapping("/getRewards") 
