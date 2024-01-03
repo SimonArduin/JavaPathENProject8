@@ -1,0 +1,2 @@
+JMH S 44 com.openclassrooms.tourguide.TestPerformance S 87 com.openclassrooms.tourguide.jmh_generated.TestPerformance_highVolumeGetRewards_jmhTest S 20 highVolumeGetRewards S 10 Throughput E A 1 1 1 E E E E E T 4 10 s E E E E E E E E E E E 
+JMH S 44 com.openclassrooms.tourguide.TestPerformance S 90 com.openclassrooms.tourguide.jmh_generated.TestPerformance_highVolumeTrackLocation_jmhTest S 23 highVolumeTrackLocation S 10 Throughput E A 1 1 1 E E E E E T 4 10 s E E E E E E E E E E E 
