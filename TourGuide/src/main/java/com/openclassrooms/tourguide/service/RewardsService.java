@@ -1,5 +1,6 @@
 package com.openclassrooms.tourguide.service;
 
+import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -25,10 +26,12 @@ public class RewardsService {
 	private int attractionProximityRange = 200;
 	private final GpsUtil gpsUtil;
 	private final RewardCentral rewardsCentral;
+	public final ExecutorService executorService;
 
 	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
 		this.rewardsCentral = rewardCentral;
+		this.executorService = Executors.newFixedThreadPool(50);
 	}
 
 	public void setProximityBuffer(int proximityBuffer) {
@@ -39,19 +42,104 @@ public class RewardsService {
 		proximityBuffer = defaultProximityBuffer;
 	}
 
-	public void calculateRewards(User user) {
+	/*public void calculateRewards(User user) {
+		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
+		List<Attraction> attractions = gpsUtil.getAttractions();
+
+		executorService.submit( () -> {
+			for(VisitedLocation visitedLocation : userLocations) {
+
+				for(Attraction attraction : attractions) {
+					if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
+						if(nearAttraction(visitedLocation, attraction)) {
+							user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+						}
+					}
+				}
+			}
+		});
+	}*/
+
+	/*public void calculateRewards(User user) throws ExecutionException, InterruptedException {
+		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
+		List<Attraction> attractions = gpsUtil.getAttractions();
+		CompletableFuture<Object> result = null;
+
+		for(VisitedLocation visitedLocation : userLocations) {
+			for(Attraction attraction : attractions) {
+
+				// CompletableFuture.supplyAsync(UserReward)
+				CompletableFuture<Attraction> cf1 = CompletableFuture.supplyAsync(() -> {
+					if (user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0)
+						return attraction;
+					else
+						return null;
+				}, executorService);
+
+				// CompletableFuture.supplyAsync(nearAttraction)
+				CompletableFuture<VisitedLocation> cf2 = CompletableFuture.supplyAsync(() -> {
+					if (nearAttraction(visitedLocation, attraction))
+						return visitedLocation;
+					else
+						return null;
+				}, executorService);
+
+				// if(both not null) CompletableFuture(addUserReward)
+				result = CompletableFuture.allOf(cf1, cf2).thenApplyAsync(ignored -> {
+					try {
+						if (cf1.get() == null || cf2.get() == null) {
+							return null;
+						}
+						user.addUserReward(new UserReward(cf2.get(), cf1.get(), getRewardPoints(cf1.get(), user)));
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					} catch (ExecutionException e) {
+						throw new RuntimeException(e);
+					}
+					return null;
+				}, executorService);
+			}
+		};
+	}*/
+
+	public void calculateRewards(User user) throws ExecutionException, InterruptedException {
 		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
 		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
-				if(user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0) {
-					if(nearAttraction(visitedLocation, attraction)) {
-						user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
+
+				CompletableFuture<Attraction> cf1 = CompletableFuture.supplyAsync(() -> {
+					if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName)))
+						return attraction;
+					else
+						throw new CancellationException();
+				}, executorService);
+
+				CompletableFuture<VisitedLocation> cf2 = CompletableFuture.supplyAsync(() -> {
+					if (nearAttraction(visitedLocation, attraction))
+						return visitedLocation;
+					else
+						throw new CancellationException();
+				}, executorService);
+
+				CompletableFuture<Object> result = CompletableFuture.allOf(cf1, cf2).thenApplyAsync(ignored -> {
+					try {
+						user.addUserReward(new UserReward(cf2.get(), cf1.get(), getRewardPoints(cf1.get(), user)));
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					} catch (ExecutionException e) {
+						throw new RuntimeException(e);
 					}
-				}
+					return null;
+				}, executorService)
+						.handle((ignored, throwable) -> {
+							cf1.cancel(true);
+							cf2.cancel(true);
+							return null;
+						});
 			}
-		}
+		};
 	}
 
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
@@ -79,5 +167,4 @@ public class RewardsService {
 		double statuteMiles = STATUTE_MILES_PER_NAUTICAL_MILE * nauticalMiles;
 		return statuteMiles;
 	}
-
 }
