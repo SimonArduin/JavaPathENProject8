@@ -31,7 +31,7 @@ public class RewardsService {
 	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
 		this.rewardsCentral = rewardCentral;
-		this.executorService = Executors.newFixedThreadPool(50);
+		this.executorService = Executors.newFixedThreadPool(37);
 	}
 
 	public void setProximityBuffer(int proximityBuffer) {
@@ -109,35 +109,11 @@ public class RewardsService {
 		for(VisitedLocation visitedLocation : userLocations) {
 			for(Attraction attraction : attractions) {
 
-				CompletableFuture<Attraction> cf1 = CompletableFuture.supplyAsync(() -> {
+				CompletableFuture.runAsync(() -> {
 					if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName)))
-						return attraction;
-					else
-						throw new CancellationException();
+						if (nearAttraction(visitedLocation, attraction))
+							user.addUserReward(new UserReward(visitedLocation, attraction, getRewardPoints(attraction, user)));
 				}, executorService);
-
-				CompletableFuture<VisitedLocation> cf2 = CompletableFuture.supplyAsync(() -> {
-					if (nearAttraction(visitedLocation, attraction))
-						return visitedLocation;
-					else
-						throw new CancellationException();
-				}, executorService);
-
-				CompletableFuture<Object> result = CompletableFuture.allOf(cf1, cf2).thenApplyAsync(ignored -> {
-					try {
-						user.addUserReward(new UserReward(cf2.get(), cf1.get(), getRewardPoints(cf1.get(), user)));
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					} catch (ExecutionException e) {
-						throw new RuntimeException(e);
-					}
-					return null;
-				}, executorService)
-						.handle((ignored, throwable) -> {
-							cf1.cancel(true);
-							cf2.cancel(true);
-							return null;
-						});
 			}
 		};
 	}
