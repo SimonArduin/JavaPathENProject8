@@ -31,7 +31,7 @@ public class RewardsService {
 	public RewardsService(GpsUtil gpsUtil, RewardCentral rewardCentral) {
 		this.gpsUtil = gpsUtil;
 		this.rewardsCentral = rewardCentral;
-		this.executorService = Executors.newFixedThreadPool(37);
+		this.executorService = Executors.newFixedThreadPool(50);
 	}
 
 	public void setProximityBuffer(int proximityBuffer) {
