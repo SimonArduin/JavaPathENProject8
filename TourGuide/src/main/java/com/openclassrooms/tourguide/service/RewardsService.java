@@ -42,11 +42,11 @@ public class RewardsService {
 		proximityBuffer = defaultProximityBuffer;
 	}
 
-	public void calculateRewards(User user) {
+	public Future<?> calculateRewards(User user) {
 		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
-		executorService.submit( () -> {
+		return executorService.submit( () -> {
 			for(VisitedLocation visitedLocation : userLocations) {
 
 				for(Attraction attraction : attractions) {

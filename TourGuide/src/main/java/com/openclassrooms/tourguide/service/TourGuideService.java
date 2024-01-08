@@ -95,7 +95,7 @@ public class TourGuideService {
 		return executorService.submit( () -> {
 			VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 			user.addToVisitedLocations(visitedLocation);
-			rewardsService.calculateRewards(user);
+			rewardsService.calculateRewards(user).get();
 			return visitedLocation;});
 	}
 
