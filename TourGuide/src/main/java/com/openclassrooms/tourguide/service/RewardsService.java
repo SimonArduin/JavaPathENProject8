@@ -42,7 +42,7 @@ public class RewardsService {
 		proximityBuffer = defaultProximityBuffer;
 	}
 
-	/*public void calculateRewards(User user) {
+	public void calculateRewards(User user) {
 		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
@@ -58,7 +58,7 @@ public class RewardsService {
 				}
 			}
 		});
-	}*/
+	}
 
 	/*public void calculateRewards(User user) throws ExecutionException, InterruptedException {
 		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
@@ -102,7 +102,7 @@ public class RewardsService {
 		};
 	}*/
 
-	public void calculateRewards(User user) throws ExecutionException, InterruptedException {
+	/*public void calculateRewards(User user) throws ExecutionException, InterruptedException {
 		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
@@ -116,7 +116,7 @@ public class RewardsService {
 				}, executorService);
 			}
 		};
-	}
+	}*/
 
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
 		return getDistance(attraction, location) > attractionProximityRange ? false : true;
