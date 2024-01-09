@@ -44,7 +44,7 @@ public class TourGuideService {
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
 		this.gpsUtil = gpsUtil;
 		this.rewardsService = rewardsService;
-		this.executorService = Executors.newCachedThreadPool();
+		this.executorService = Executors.newFixedThreadPool(50);
 		
 		Locale.setDefault(Locale.US);
 
