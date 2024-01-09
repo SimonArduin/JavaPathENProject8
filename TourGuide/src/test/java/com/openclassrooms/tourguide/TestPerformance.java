@@ -46,7 +46,7 @@ public class TestPerformance {
 	 * TimeUnit.MILLISECONDS.toSeconds(stopWatch.getTime()));
 	 */
 
-	private static final Integer internalUserNumber = 50000;
+	private static final Integer internalUserNumber = 100000;
 
 	@Test
 	public void highVolumeTrackLocation() throws ExecutionException, InterruptedException {
@@ -95,13 +95,7 @@ public class TestPerformance {
 		allUsers.forEach(u -> u.addToVisitedLocations(new VisitedLocation(u.getUserId(), attraction, new Date())));
 
 		allUsers.forEach(u -> {
-			try {
 				rewardsService.calculateRewards(u);
-			} catch (ExecutionException e) {
-				throw new RuntimeException(e);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}
 		});
 
 		rewardsService.executorService.shutdown();

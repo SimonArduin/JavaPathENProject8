@@ -1,10 +1,7 @@
 package com.openclassrooms.tourguide.service;
 
-import java.awt.geom.Point2D;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
@@ -42,11 +39,11 @@ public class RewardsService {
 		proximityBuffer = defaultProximityBuffer;
 	}
 
-	/*public void calculateRewards(User user) {
+	public Future<?> calculateRewards(User user) {
 		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
 		List<Attraction> attractions = gpsUtil.getAttractions();
 
-		executorService.submit( () -> {
+		return CompletableFuture.runAsync( () -> {
 			for(VisitedLocation visitedLocation : userLocations) {
 
 				for(Attraction attraction : attractions) {
@@ -57,89 +54,7 @@ public class RewardsService {
 					}
 				}
 			}
-		});
-	}*/
-
-	/*public void calculateRewards(User user) throws ExecutionException, InterruptedException {
-		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
-		List<Attraction> attractions = gpsUtil.getAttractions();
-		CompletableFuture<Object> result = null;
-
-		for(VisitedLocation visitedLocation : userLocations) {
-			for(Attraction attraction : attractions) {
-
-				// CompletableFuture.supplyAsync(UserReward)
-				CompletableFuture<Attraction> cf1 = CompletableFuture.supplyAsync(() -> {
-					if (user.getUserRewards().stream().filter(r -> r.attraction.attractionName.equals(attraction.attractionName)).count() == 0)
-						return attraction;
-					else
-						return null;
-				}, executorService);
-
-				// CompletableFuture.supplyAsync(nearAttraction)
-				CompletableFuture<VisitedLocation> cf2 = CompletableFuture.supplyAsync(() -> {
-					if (nearAttraction(visitedLocation, attraction))
-						return visitedLocation;
-					else
-						return null;
-				}, executorService);
-
-				// if(both not null) CompletableFuture(addUserReward)
-				result = CompletableFuture.allOf(cf1, cf2).thenApplyAsync(ignored -> {
-					try {
-						if (cf1.get() == null || cf2.get() == null) {
-							return null;
-						}
-						user.addUserReward(new UserReward(cf2.get(), cf1.get(), getRewardPoints(cf1.get(), user)));
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					} catch (ExecutionException e) {
-						throw new RuntimeException(e);
-					}
-					return null;
-				}, executorService);
-			}
-		};
-	}*/
-
-	public void calculateRewards(User user) throws ExecutionException, InterruptedException {
-		CopyOnWriteArrayList<VisitedLocation> userLocations = new CopyOnWriteArrayList<>(user.getVisitedLocations());
-		List<Attraction> attractions = gpsUtil.getAttractions();
-
-		for(VisitedLocation visitedLocation : userLocations) {
-			for(Attraction attraction : attractions) {
-
-				CompletableFuture<Attraction> cf1 = CompletableFuture.supplyAsync(() -> {
-					if (user.getUserRewards().stream().noneMatch(r -> r.attraction.attractionName.equals(attraction.attractionName)))
-						return attraction;
-					else
-						throw new CancellationException();
-				}, executorService);
-
-				CompletableFuture<VisitedLocation> cf2 = CompletableFuture.supplyAsync(() -> {
-					if (nearAttraction(visitedLocation, attraction))
-						return visitedLocation;
-					else
-						throw new CancellationException();
-				}, executorService);
-
-				CompletableFuture<Object> result = CompletableFuture.allOf(cf1, cf2).thenApplyAsync(ignored -> {
-					try {
-						user.addUserReward(new UserReward(cf2.get(), cf1.get(), getRewardPoints(cf1.get(), user)));
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					} catch (ExecutionException e) {
-						throw new RuntimeException(e);
-					}
-					return null;
-				}, executorService)
-						.handle((ignored, throwable) -> {
-							cf1.cancel(true);
-							cf2.cancel(true);
-							return null;
-						});
-			}
-		};
+		}, executorService);
 	}
 
 	public boolean isWithinAttractionProximity(Attraction attraction, Location location) {
