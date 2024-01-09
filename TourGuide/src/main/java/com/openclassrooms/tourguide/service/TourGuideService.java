@@ -38,7 +38,7 @@ public class TourGuideService {
 	private final RewardsService rewardsService;
 	private final TripPricer tripPricer = new TripPricer();
 	public final Tracker tracker;
-	private final ExecutorService executorService;
+	public final ExecutorService executorService;
 	boolean testMode = true;
 
 	public TourGuideService(GpsUtil gpsUtil, RewardsService rewardsService) {
@@ -92,11 +92,17 @@ public class TourGuideService {
 	}
 
 	public Future<VisitedLocation> trackUserLocation(User user) {
-		return executorService.submit( () -> {
+		return CompletableFuture.supplyAsync( () -> {
 			VisitedLocation visitedLocation = gpsUtil.getUserLocation(user.getUserId());
 			user.addToVisitedLocations(visitedLocation);
-			rewardsService.calculateRewards(user).get();
-			return visitedLocation;});
+			try {
+				rewardsService.calculateRewards(user).get();
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			} catch (ExecutionException e) {
+				throw new RuntimeException(e);
+			}
+			return visitedLocation;}, executorService);
 	}
 
 	public List<Attraction> getNearByAttractions(VisitedLocation visitedLocation) {
