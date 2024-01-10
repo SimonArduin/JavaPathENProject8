@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import rewardCentral.RewardCentral;
 
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestTourGuideController {
 
     @Test
-    public void getNearbyAttractions() throws JSONException {
+    public void getNearbyAttractions() throws JSONException, ExecutionException, InterruptedException {
         GpsUtil gpsUtil = new GpsUtil();
         RewardCentral rewardCentral = new RewardCentral();
         RewardsService rewardsService = new RewardsService(gpsUtil, rewardCentral);
